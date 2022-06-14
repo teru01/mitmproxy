@@ -187,6 +187,26 @@ class Export:
         except OSError as e:
             ctx.log.error(str(e))
 
+    @command.command("export.all")
+    def file(self, format: str, flows: Sequence[flow.Flow], path: mitmproxy.types.Path) -> None:
+        """
+        Export a flow to path.
+        """
+        if format not in formats:
+            raise exceptions.CommandError("No such export format: %s" % format)
+        func: Any = formats[format]
+        try:
+            with open(path, "ab") as fp:
+                for flow in flows:
+                    v = func(flow)
+                    if isinstance(v, bytes):
+                        fp.write(v)
+                    else:
+                        fp.write(v.encode("utf-8"))
+                    fp.write("\n".encode("utf-8"))
+        except OSError as e:
+            ctx.log.error(str(e))
+
     @command.command("export.clip")
     def clip(self, format: str, f: flow.Flow) -> None:
         """
