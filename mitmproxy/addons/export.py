@@ -228,7 +228,8 @@ class Export:
                 # else:
                 #     fp.write(v.encode("utf-8"))
                 # for (host, path, method), data in pathMap.items():
-                fp.write(json.dumps(pathMap))
+                result = [ data for data in pathMap.values()]
+                fp.write(json.dumps(result))
                 # fp.write("\n".encode("utf-8"))
         except OSError as e:
             ctx.log.error(str(e))
