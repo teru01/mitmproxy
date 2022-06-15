@@ -1,9 +1,10 @@
+import pickle
 import shlex
 from collections.abc import Callable, Sequence
 from typing import Any, Union
 
 import pyperclip
-
+import json
 import mitmproxy.types
 from mitmproxy import command
 from mitmproxy import ctx, http
@@ -196,14 +197,39 @@ class Export:
             raise exceptions.CommandError("No such export format: %s" % format)
         func: Any = formats[format]
         try:
-            with open(path, "ab") as fp:
-                for flow in flows:
-                    v = func(flow)
-                    if isinstance(v, bytes):
-                        fp.write(v)
-                    else:
-                        fp.write(v.encode("utf-8"))
-                    fp.write("\n".encode("utf-8"))
+            with open(path, "w") as fp:
+                pathMap = {}
+                for f in flows:
+                    """Return either the request or response if only one exists, otherwise return both"""
+                    request_present = (
+                        isinstance(f, http.HTTPFlow) and f.request and f.request.raw_content is not None
+                    )
+                    response_present = (
+                        isinstance(f, http.HTTPFlow)
+                        and f.response
+                        and f.response.raw_content is not None
+                    )
+
+                    if request_present and response_present:
+                        # return b"NEW_FLOW\n" + b"".join([raw_request(f), separator, raw_response(f)])
+                        request = cleanup_request(f)
+                        response = cleanup_response(f)
+                        pathMap[request.host+str(request.port)+request.path+request.method] = {
+                            "host": request.host+":"+str(request.port),
+                            "path": request.path,
+                            "method": request.method,
+                            "request": bytes.decode(request.content),
+                            "response": bytes.decode(response.content)
+                        }
+                # json.dump(fp, pathMap)
+                # v = func(flow)
+                # if isinstance(v, bytes):
+                #     fp.write(v)
+                # else:
+                #     fp.write(v.encode("utf-8"))
+                # for (host, path, method), data in pathMap.items():
+                fp.write(json.dumps(pathMap))
+                # fp.write("\n".encode("utf-8"))
         except OSError as e:
             ctx.log.error(str(e))
 
