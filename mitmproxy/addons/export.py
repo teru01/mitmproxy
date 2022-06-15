@@ -129,7 +129,7 @@ def raw(f: flow.Flow, separator=b"\r\n\r\n") -> bytes:
     )
 
     if request_present and response_present:
-        return b"".join([raw_request(f), separator, raw_response(f)])
+        return b"NEW_FLOW\n" + b"".join([raw_request(f), separator, raw_response(f)])
     elif request_present:
         return raw_request(f)
     elif response_present:
