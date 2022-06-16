@@ -2,7 +2,7 @@ import pickle
 import shlex
 from collections.abc import Callable, Sequence
 from typing import Any, Union
-
+import re
 import pyperclip
 import json
 import mitmproxy.types
@@ -214,9 +214,11 @@ class Export:
                         # return b"NEW_FLOW\n" + b"".join([raw_request(f), separator, raw_response(f)])
                         request = cleanup_request(f)
                         response = cleanup_response(f)
-                        pathMap[request.host+str(request.port)+request.path+request.method] = {
+
+                        raw_path = re.findall(r"^(.*?)(\?.*)?$", request.path)[0][0]
+                        pathMap[request.host+str(request.port)+raw_path+request.method] = {
                             "host": request.host+":"+str(request.port),
-                            "path": request.path,
+                            "path": raw_path,
                             "method": request.method,
                             "request": bytes.decode(request.content),
                             "response": bytes.decode(response.content)
